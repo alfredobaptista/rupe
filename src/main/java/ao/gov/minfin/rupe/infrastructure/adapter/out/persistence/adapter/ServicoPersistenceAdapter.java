@@ -52,6 +52,14 @@ public Optional<Servico> buscarPorCodigo(String codigo) {
         );
     }
 
+    @Override
+public List<Servico> listarTodos() {
+    return repository.findAllComEmolumentos()
+            .stream()
+            .map(this::toDomain)
+            .toList();
+}
+
     private Emolumento toDomain(
             EmolumentoJpaEntity entity
     ) {
