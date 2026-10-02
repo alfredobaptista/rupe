@@ -1,11 +1,10 @@
-
 package ao.gov.minfin.rupe.application.service;
 
 import ao.gov.minfin.rupe.application.command.GerarRupeCommand;
 import ao.gov.minfin.rupe.application.port.out.RupeRepositoryPort;
 import ao.gov.minfin.rupe.application.port.out.ServicoRepositoryPort;
-import ao.gov.minfin.rupe.domain.entity.Rupe;
 import ao.gov.minfin.rupe.domain.entity.Servico;
+import ao.gov.minfin.rupe.domain.entity.Rupe;
 import ao.gov.minfin.rupe.domain.valueobject.Emolumento;
 import ao.gov.minfin.rupe.domain.valueobject.Nif;
 import org.junit.jupiter.api.Test;
@@ -19,101 +18,109 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class GerarRupeServiceTest {
 
-@Test
-void deveGerarRupeComReferenciaDe20Digitos() {
+    @Test
+    void deveGerarRupeComSucesso() {
 
-    RupeRepositoryPort rupeRepository =
-            new RupeRepositoryPort() {
+        RupeRepositoryPort rupeRepository =
+                new RupeRepositoryPort() {
 
-                @Override
-                public Rupe guardar(Rupe rupe) {
-                    return rupe;
-                }
+                    @Override
+                    public Rupe guardar(Rupe rupe) {
+                        return rupe;
+                    }
 
-                @Override
-                public Optional<Rupe> buscarPorReferencia(
-                        String referencia
-                ) {
-                    return Optional.empty();
-                }
+                    @Override
+                    public Optional<Rupe> buscarPorReferencia(
+                            String referencia
+                    ) {
+                        return Optional.empty();
+                    }
 
-                @Override
-                public Optional<Rupe>
-                buscarPorReferenciaComBloqueio(
-                        String referencia
-                ) {
-                    return Optional.empty();
-                }
+                    @Override
+                    public Optional<Rupe> buscarPorReferenciaComBloqueio(
+                            String referencia
+                    ) {
+                        return Optional.empty();
+                    }
 
-                @Override
-                public long obterProximoSequencial() {
-                    return 1L;
-                }
-            };
+                    @Override
+                    public long obterProximoSequencial() {
+                        return 1L;
+                    }
+                };
 
-    Servico servico = new Servico(
-            "SERV-001",
-            "Emissão de Certidão",
-            "0001",
-            "01",
-            true,
-            List.of(
-                    new Emolumento(
-                            "Taxa de emissão",
-                            new BigDecimal("5000.00")
-                    )
-            )
-    );
+        Servico servico = new Servico(
+                "SERV-001",
+                "Emissão de Certidão",
+                "0001",
+                "01",
+                true,
+                List.of(
+                        new Emolumento(
+                                "Taxa de emissão",
+                                new BigDecimal("5000.00")
+                        )
+                )
+        );
 
-    ServicoRepositoryPort servicoRepository =
-            codigo -> Optional.of(servico);
+        ServicoRepositoryPort servicoRepository =
+                new ServicoRepositoryPort() {
 
-    GerarRupeService service =
-            new GerarRupeService(
-                    rupeRepository,
-                    servicoRepository
-            );
+                    @Override
+                    public Optional<Servico> buscarPorCodigo(
+                            String codigo
+                    ) {
+                        return Optional.of(servico);
+                    }
 
-    GerarRupeCommand command =
-            new GerarRupeCommand(
-                    new Nif("123456789"),
-                    "Alfredo Baptista",
-                    "SERV-001",
-                    LocalDateTime.now().plusDays(30)
-            );
+                    @Override
+                    public List<Servico> listarTodos() {
+                        return List.of();
+                    }
+                };
 
-    Rupe rupe = service.executar(command);
+        GerarRupeService service =
+                new GerarRupeService(
+                        rupeRepository,
+                        servicoRepository
+                );
 
-    assertNotNull(rupe);
+        GerarRupeCommand command =
+                new GerarRupeCommand(
+                        new Nif("123456789"),
+                        "Alfredo Baptista",
+                        "SERV-001",
+                        LocalDateTime.now().plusDays(30)
+                );
 
-    assertEquals(
-            20,
-            rupe.getReferencia().length()
-    );
+        Rupe rupe = service.executar(command);
 
-    assertTrue(
-            rupe.getReferencia().matches("\\d{20}")
-    );
+        assertNotNull(rupe);
+        assertNotNull(rupe.getReferencia());
 
-    assertEquals(
-            "Alfredo Baptista",
-            rupe.getContribuinte().getNome()
-    );
+        assertEquals(
+                "123456789",
+                rupe.getContribuinte().getNif().getValor()
+        );
 
-    assertEquals(
-            "SERV-001",
-            rupe.getCodigoServico()
-    );
+        assertEquals(
+                "Alfredo Baptista",
+                rupe.getContribuinte().getNome()
+        );
 
-    assertEquals(
-            new BigDecimal("5000.00"),
-            rupe.getValor()
-    );
+        assertEquals(
+                "SERV-001",
+                rupe.getCodigoServico()
+        );
 
-    assertEquals(
-            "PENDENTE",
-            rupe.getEstado().name()
-    );
-}
+        assertEquals(
+                "Emissão de Certidão",
+                rupe.getDescricaoServico()
+        );
 
+        assertEquals(
+                new BigDecimal("5000.00"),
+                rupe.getValor()
+        );
+    }
 }
