@@ -12,8 +12,7 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 
 @Component
-public class RupePersistenceAdapter
-        implements RupeRepositoryPort {
+public class RupePersistenceAdapter implements RupeRepositoryPort {
 
     private final SpringDataRupeRepository repository;
     private final RupeSequenceRepository sequenceRepository;
@@ -27,48 +26,48 @@ public class RupePersistenceAdapter
     }
 
     @Override
-public Rupe guardar(Rupe rupe) {
+    public Rupe guardar(Rupe rupe) {
 
-    RupeJpaEntity entity = repository
-            .findByReferencia(rupe.getReferencia())
-            .map(existing -> actualizarExistente(existing, rupe))
-            .orElseGet(() -> toEntity(rupe));
+        RupeJpaEntity entity = repository
+                .findByReferencia(rupe.getReferencia())
+                .map(existing -> actualizarExistente(existing, rupe))
+                .orElseGet(() -> toEntity(rupe));
 
-    RupeJpaEntity saved = repository.save(entity);
+        RupeJpaEntity saved = repository.save(entity);
 
-    return toDomain(saved);
-}
-private RupeJpaEntity actualizarExistente(
-        RupeJpaEntity entity,
-        Rupe rupe
-) {
-    entity.actualizarPagamento(
-            rupe.getEstado(),
-            rupe.getNumeroRecibo(),
-            rupe.getDataPagamento()
-    );
+        return toDomain(saved);
+    }
 
-    return entity;
-}
+    private RupeJpaEntity actualizarExistente(
+            RupeJpaEntity entity,
+            Rupe rupe
+    ) {
+        entity.actualizarPagamento(
+                rupe.getEstado(),
+                rupe.getNumeroRecibo(),
+                rupe.getDataPagamento()
+        );
+
+        return entity;
+    }
 
     @Override
     public Optional<Rupe> buscarPorReferencia(
             String referencia
     ) {
-
         return repository
                 .findByReferencia(referencia)
                 .map(this::toDomain);
     }
 
     @Override
-public Optional<Rupe> buscarPorReferenciaComBloqueio(
-        String referencia
-) {
-    return repository
-            .findWithLockByReferencia(referencia)
-            .map(this::toDomain);
-}
+    public Optional<Rupe> buscarPorReferenciaComBloqueio(
+            String referencia
+    ) {
+        return repository
+                .findWithLockByReferencia(referencia)
+                .map(this::toDomain);
+    }
 
     @Override
     public long obterProximoSequencial() {
@@ -104,8 +103,8 @@ public Optional<Rupe> buscarPorReferenciaComBloqueio(
 
         switch (entity.getEstado()) {
 
-            case PENDENTE -> {
-                // Estado inicial do domínio.
+            case ABERTO -> {
+                // Estado inicial do RUPE.
             }
 
             case PAGO -> rupe.confirmarPagamento(

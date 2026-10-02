@@ -2,7 +2,7 @@ package ao.gov.minfin.rupe.domain.enums;
 
 public enum EstadoPagamento {
 
-    PENDENTE(1, "Pendente"),
+    ABERTO(1, "Aberto"),
     PAGO(2, "Pago"),
     EXPIRADO(3, "Expirado"),
     CANCELADO(4, "Cancelado");

@@ -59,16 +59,16 @@ public class Rupe {
         this.codigoServico = codigoServico.trim();
         this.descricaoServico = descricaoServico.trim();
         this.valor = valor;
-        this.estado = EstadoPagamento.PENDENTE;
+        this.estado = EstadoPagamento.ABERTO;
     }
 
     public void confirmarPagamento(
             String numeroRecibo,
             LocalDateTime dataPagamento
     ) {
-        if (estado != EstadoPagamento.PENDENTE) {
+        if (estado != EstadoPagamento.ABERTO) {
             throw new IllegalStateException(
-                    "Apenas um RUPE pendente pode ser pago."
+                    "Apenas um RUPE aberto pode ser pago."
             );
         }
 
@@ -88,7 +88,7 @@ public class Rupe {
     }
 
     public void expirar() {
-        if (estado != EstadoPagamento.PENDENTE) {
+        if (estado != EstadoPagamento.ABERTO) {
             return;
         }
 
@@ -96,9 +96,9 @@ public class Rupe {
     }
 
     public void cancelar() {
-        if (estado != EstadoPagamento.PENDENTE) {
+        if (estado != EstadoPagamento.ABERTO) {
             throw new IllegalStateException(
-                    "Apenas um RUPE pendente pode ser cancelado."
+                    "Apenas um RUPE aberto pode ser cancelado."
             );
         }
 
