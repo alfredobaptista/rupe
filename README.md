@@ -2,13 +2,13 @@
 
 API REST para **geração, consulta e processamento de pagamentos de RUPE**, desenvolvida com **Java 21 e Spring Boot**.
 
-A aplicação está disponível para execução local e também possui uma instância publicada na cloud.
+A aplicação pode ser executada localmente ou consumida através da instância publicada na cloud.
 
 ---
 
 ## 🚀 API em produção
 
-A aplicação está disponível em:
+A API está disponível em:
 
 **https://rupe-api.onrender.com**
 
@@ -36,7 +36,7 @@ A API pode ser utilizada directamente através da instância publicada, sem nece
 
 # Funcionalidades
 
-A API disponibiliza os seguintes recursos:
+A API disponibiliza:
 
 * Listagem dos serviços disponíveis;
 * Geração de RUPE;
@@ -59,24 +59,18 @@ A API disponibiliza os seguintes recursos:
 
 # REST Client
 
-Os requests da API podem ser executados através de um ficheiro `.http`.
+Os requests podem ser executados através de um ficheiro `.http`, utilizando o **REST Client do VS Code** ou um IDE compatível com HTTP Client.
 
-O projecto pode manter os exemplos em:
+Uma organização possível:
 
 ```text
 requests/
 └── rupe-api.http
 ```
 
-O ficheiro pode ser executado directamente através do **REST Client do VS Code** ou de um IDE compatível com HTTP Client.
-
----
-
 ## Configuração do ambiente
 
 ### Cloud
-
-Para consumir a API publicada:
 
 ```http
 @baseUrl = https://rupe-api.onrender.com
@@ -84,13 +78,11 @@ Para consumir a API publicada:
 
 ### Local
 
-Para utilizar a aplicação localmente:
-
 ```http
 @baseUrl = http://localhost:8080
 ```
 
-Desta forma, os mesmos requests podem ser utilizados nos dois ambientes, alterando apenas a variável `@baseUrl`.
+Desta forma, os mesmos requests podem ser utilizados nos dois ambientes, alterando apenas `@baseUrl`.
 
 ---
 
@@ -101,12 +93,6 @@ Lista os serviços disponíveis para geração de RUPE.
 ```http
 GET {{baseUrl}}/api/v1/rupes/servicos
 Accept: application/json
-```
-
-### URL em produção
-
-```text
-https://rupe-api.onrender.com/api/v1/rupes/servicos
 ```
 
 ### Exemplo de resposta
@@ -126,7 +112,7 @@ https://rupe-api.onrender.com/api/v1/rupes/servicos
 ]
 ```
 
-O código do serviço é utilizado na geração da RUPE.
+O `codigo` do serviço é utilizado na geração da RUPE.
 
 ---
 
@@ -147,13 +133,7 @@ Accept: application/json
 }
 ```
 
-### URL em produção
-
-```text
-https://rupe-api.onrender.com/api/v1/rupes
-```
-
-### Resposta
+### Exemplo de resposta
 
 ```json
 {
@@ -165,32 +145,32 @@ https://rupe-api.onrender.com/api/v1/rupes
   "valor": 11176.00,
   "dataEmissao": "2026-10-02T16:10:13.555954",
   "dataExpiracao": "2026-11-01T23:59:59",
-  "estado": "PENDENTE",
+  "estado": "ABERTO",
   "numeroRecibo": null,
   "dataPagamento": null
 }
 ```
 
-A referência retornada deve ser utilizada para consultar ou pagar a RUPE.
+Uma RUPE recém-gerada inicia no estado:
+
+```text
+ABERTO
+```
+
+A `referencia` retornada pode posteriormente ser utilizada para consulta ou processamento do pagamento.
 
 ---
 
 # 3. Consultar RUPE
 
-Consulta uma RUPE através da referência.
+Consulta uma RUPE através da sua referência.
 
 ```http
 GET {{baseUrl}}/api/v1/rupes/00010100000000000016
 Accept: application/json
 ```
 
-### URL em produção
-
-```text
-https://rupe-api.onrender.com/api/v1/rupes/00010100000000000016
-```
-
-### Resposta
+### Exemplo de resposta
 
 ```json
 {
@@ -201,7 +181,7 @@ https://rupe-api.onrender.com/api/v1/rupes/00010100000000000016
   "valor": 11176.00,
   "dataEmissao": "2026-10-02T16:10:13.555954",
   "dataExpiracao": "2026-11-01T23:59:59",
-  "estado": "PENDENTE",
+  "estado": "ABERTO",
   "numeroRecibo": null,
   "dataPagamento": null
 }
@@ -213,7 +193,13 @@ https://rupe-api.onrender.com/api/v1/rupes/00010100000000000016
 
 Processa o pagamento de uma RUPE.
 
-Este endpoint exige o header `Idempotency-Key`.
+O endpoint exige o header:
+
+```text
+Idempotency-Key
+```
+
+Request:
 
 ```http
 POST {{baseUrl}}/api/v1/pagamentos
@@ -228,13 +214,7 @@ Idempotency-Key: PAGAMENTO-RUPE-00010100000000000016-001
 }
 ```
 
-### URL em produção
-
-```text
-https://rupe-api.onrender.com/api/v1/pagamentos
-```
-
-### Resposta
+### Exemplo de resposta
 
 ```json
 {
@@ -256,14 +236,14 @@ https://rupe-api.onrender.com/api/v1/pagamentos
 
 # 5. Consultar após o pagamento
 
-Depois do pagamento, a mesma referência pode ser consultada novamente:
+Depois do processamento, a mesma referência pode ser consultada novamente:
 
 ```http
 GET {{baseUrl}}/api/v1/rupes/00010100000000000016
 Accept: application/json
 ```
 
-A resposta deverá apresentar:
+A RUPE deverá apresentar o estado:
 
 ```json
 {
@@ -276,9 +256,11 @@ A resposta deverá apresentar:
 
 ---
 
-# 6. Testar idempotência
+# 6. Idempotência no pagamento
 
-A mesma operação pode ser reenviada utilizando a mesma `Idempotency-Key`.
+O processamento utiliza uma `Idempotency-Key` para identificar uma operação lógica de pagamento.
+
+Para reenviar a **mesma operação**, deve ser utilizada a mesma chave:
 
 ```http
 POST {{baseUrl}}/api/v1/pagamentos
@@ -293,25 +275,23 @@ Idempotency-Key: PAGAMENTO-RUPE-00010100000000000016-001
 }
 ```
 
-A `Idempotency-Key` identifica a operação lógica de pagamento.
-
-Para uma nova operação deve ser utilizada uma nova chave.
+Para uma nova operação de pagamento, deve ser utilizada uma nova `Idempotency-Key`.
 
 ---
 
-# Fluxo completo
+# Fluxo da API
 
 ```text
 GET /api/v1/rupes/servicos
             │
             ▼
-       Código serviço
+       Código do serviço
             │
             ▼
 POST /api/v1/rupes
             │
             ▼
-       RUPE PENDENTE
+       RUPE ABERTO
             │
             ▼
 GET /api/v1/rupes/{referencia}
@@ -327,7 +307,7 @@ POST /api/v1/pagamentos
 GET /api/v1/rupes/{referencia}
             │
             ▼
-       Estado: PAGO
+        Estado: PAGO
 ```
 
 ---
@@ -337,6 +317,7 @@ GET /api/v1/rupes/{referencia}
 ## Pré-requisitos
 
 * Java 21
+* PostgreSQL
 * Docker
 * Git
 
@@ -351,9 +332,11 @@ cd rupe
 
 ## Configurar PostgreSQL
 
-A aplicação necessita de uma instância PostgreSQL.
+A aplicação necessita de uma instância PostgreSQL configurada de acordo com as propriedades do ambiente.
 
-Depois de configurar a base de dados de acordo com as propriedades da aplicação, executar:
+As migrações do schema são geridas automaticamente pelo **Flyway**.
+
+Depois de configurar a base de dados:
 
 ```bash
 ./mvnw spring-boot:run
@@ -364,8 +347,6 @@ A API ficará disponível em:
 ```text
 http://localhost:8080
 ```
-
-As migrações da base de dados são geridas pelo Flyway.
 
 ---
 
@@ -389,6 +370,8 @@ Para gerar o artefacto sem executar os testes:
 ./mvnw clean package -DskipTests
 ```
 
+> `-DskipTests` impede a execução dos testes, mas o Maven continua a compilar o código de testes. Para ignorar também a compilação dos testes, utilize `-Dmaven.test.skip=true`.
+
 ---
 
 # Docker
@@ -405,6 +388,12 @@ Executar:
 docker run --rm \
   -p 8080:8080 \
   rupe:latest
+```
+
+A aplicação ficará disponível em:
+
+```text
+http://localhost:8080
 ```
 
 ---
@@ -443,7 +432,7 @@ https://rupe-api.onrender.com/v3/api-docs
 
 # Exemplo de utilização em produção
 
-A instância cloud pode ser utilizada directamente sem instalar o projecto.
+A instância publicada pode ser consumida directamente sem instalar o projecto.
 
 ### Consultar serviços
 
@@ -457,6 +446,7 @@ Accept: application/json
 ```http
 POST https://rupe-api.onrender.com/api/v1/rupes
 Content-Type: application/json
+Accept: application/json
 
 {
   "nif": "009150115UE044",
@@ -478,6 +468,7 @@ Accept: application/json
 ```http
 POST https://rupe-api.onrender.com/api/v1/pagamentos
 Content-Type: application/json
+Accept: application/json
 Idempotency-Key: PAGAMENTO-RUPE-00010100000000000016-001
 
 {
@@ -511,4 +502,4 @@ Backend Developer — Java & Spring Boot
 
 Luanda, Angola
 
-GitHub: [alfredobaptista](https://github.com/alfredobaptista)
+GitHub: https://github.com/alfredobaptista
