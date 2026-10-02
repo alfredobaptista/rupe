@@ -2,22 +2,5 @@ spring:
   application:
     name: rupe
 
-  datasource:
-    url: jdbc:postgresql://localhost:5432/rupe
-    username: alfredo
-    password: 12345678
-
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    open-in-view: false
-    properties:
-      hibernate:
-        format_sql: true
-
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
-
-server:
-  port: 8080
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
