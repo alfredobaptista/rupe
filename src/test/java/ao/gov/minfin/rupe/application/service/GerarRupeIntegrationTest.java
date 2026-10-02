@@ -121,7 +121,7 @@ class GerarRupeIntegrationTest {
         );
 
         assertEquals(
-                "PENDENTE",
+                "ABERTO",
                 rupe.getEstado().name()
         );
 

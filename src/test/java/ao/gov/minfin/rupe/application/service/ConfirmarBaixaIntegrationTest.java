@@ -85,7 +85,7 @@ class ConfirmarBaixaIntegrationTest {
         );
 
         assertEquals(
-                EstadoPagamento.PENDENTE,
+                EstadoPagamento.ABERTO,
                 rupe.getEstado()
         );
 

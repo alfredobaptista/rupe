@@ -81,7 +81,7 @@ class RupeOptimisticLockingIntegrationTest {
                     new java.math.BigDecimal("5000.00"),
                     LocalDateTime.now(),
                     LocalDateTime.now().plusDays(30),
-                    ao.gov.minfin.rupe.domain.enums.EstadoPagamento.PENDENTE,
+                    ao.gov.minfin.rupe.domain.enums.EstadoPagamento.ABERTO,
                     null,
                     null
             );
