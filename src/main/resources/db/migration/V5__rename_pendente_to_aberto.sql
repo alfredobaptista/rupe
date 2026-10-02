@@ -1,5 +1,4 @@
--- Actualiza a constraint do estado do RUPE.
--- ABERTO substitui PENDENTE como estado inicial.
+-- Actualiza o estado inicial do RUPE de PENDENTE para ABERTO.
 
 ALTER TABLE rupes
     DROP CONSTRAINT ck_rupe_estado;
