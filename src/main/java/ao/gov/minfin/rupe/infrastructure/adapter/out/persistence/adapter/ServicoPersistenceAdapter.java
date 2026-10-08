@@ -23,18 +23,22 @@ public class ServicoPersistenceAdapter
         this.repository = repository;
     }
 
+    @Override
+    public Optional<Servico> buscarPorCodigo(String codigo) {
+        return repository
+                .findByCodigoComEmolumentos(codigo)
+                .map(this::toDomain);
+    }
 
     @Override
-public Optional<Servico> buscarPorCodigo(String codigo) {
+    public List<Servico> listarTodos() {
+        return repository.findAllComEmolumentos()
+                .stream()
+                .map(this::toDomain)
+                .toList();
+    }
 
-    return repository
-            .findByCodigoComEmolumentos(codigo)
-            .map(this::toDomain);
-}
-
-    private Servico toDomain(
-            ServicoJpaEntity entity
-    ) {
+    private Servico toDomain(ServicoJpaEntity entity) {
 
         List<Emolumento> emolumentos =
                 entity.getEmolumentos()
@@ -44,6 +48,7 @@ public Optional<Servico> buscarPorCodigo(String codigo) {
 
         return new Servico(
                 entity.getCodigo(),
+                entity.getCodigoNumerico(),
                 entity.getNome(),
                 entity.getCodigoOrganismo(),
                 entity.getCodigoModulo(),
@@ -52,17 +57,7 @@ public Optional<Servico> buscarPorCodigo(String codigo) {
         );
     }
 
-    @Override
-public List<Servico> listarTodos() {
-    return repository.findAllComEmolumentos()
-            .stream()
-            .map(this::toDomain)
-            .toList();
-}
-
-    private Emolumento toDomain(
-            EmolumentoJpaEntity entity
-    ) {
+    private Emolumento toDomain(EmolumentoJpaEntity entity) {
         return new Emolumento(
                 entity.getNome(),
                 entity.getValor()

@@ -9,6 +9,7 @@ import java.util.Objects;
 public class Servico {
 
     private final String codigo;
+    private final String codigoNumerico;
     private final String nome;
     private final String codigoOrganismo;
     private final String codigoModulo;
@@ -17,6 +18,7 @@ public class Servico {
 
     public Servico(
             String codigo,
+            String codigoNumerico,
             String nome,
             String codigoOrganismo,
             String codigoModulo,
@@ -24,6 +26,7 @@ public class Servico {
             List<Emolumento> emolumentos
     ) {
         validarCodigo(codigo);
+        validarCodigoNumerico(codigoNumerico);
         validarNome(nome);
         validarCodigoOrganismo(codigoOrganismo);
         validarCodigoModulo(codigoModulo);
@@ -46,6 +49,7 @@ public class Servico {
         }
 
         this.codigo = codigo.trim();
+        this.codigoNumerico = codigoNumerico.trim();
         this.nome = nome.trim();
         this.codigoOrganismo = codigoOrganismo.trim();
         this.codigoModulo = codigoModulo.trim();
@@ -68,6 +72,16 @@ public class Servico {
         if (codigo == null || codigo.isBlank()) {
             throw new IllegalArgumentException(
                     "O código do serviço é obrigatório."
+            );
+        }
+    }
+
+    private void validarCodigoNumerico(String codigoNumerico) {
+        if (codigoNumerico == null
+                || !codigoNumerico.matches("\\d{1,4}")) {
+            throw new IllegalArgumentException(
+                    "O código numérico do serviço deve conter "
+                    + "entre 1 e 4 dígitos."
             );
         }
     }
@@ -100,6 +114,10 @@ public class Servico {
 
     public String getCodigo() {
         return codigo;
+    }
+
+    public String getCodigoNumerico() {
+        return codigoNumerico;
     }
 
     public String getNome() {

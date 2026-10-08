@@ -12,6 +12,10 @@ import java.util.List;
                 @UniqueConstraint(
                         name = "uk_servico_codigo",
                         columnNames = "codigo"
+                ),
+                @UniqueConstraint(
+                        name = "uk_servico_codigo_numerico",
+                        columnNames = "codigo_numerico"
                 )
         }
 )
@@ -23,6 +27,13 @@ public class ServicoJpaEntity {
 
     @Column(nullable = false, length = 50)
     private String codigo;
+
+    @Column(
+            name = "codigo_numerico",
+            nullable = false,
+            length = 4
+    )
+    private String codigoNumerico;
 
     @Column(nullable = false, length = 200)
     private String nome;
@@ -57,6 +68,7 @@ public class ServicoJpaEntity {
 
     public ServicoJpaEntity(
             String codigo,
+            String codigoNumerico,
             String nome,
             String codigoOrganismo,
             String codigoModulo,
@@ -64,6 +76,7 @@ public class ServicoJpaEntity {
             List<EmolumentoJpaEntity> emolumentos
     ) {
         this.codigo = codigo;
+        this.codigoNumerico = codigoNumerico;
         this.nome = nome;
         this.codigoOrganismo = codigoOrganismo;
         this.codigoModulo = codigoModulo;
@@ -77,6 +90,10 @@ public class ServicoJpaEntity {
 
     public String getCodigo() {
         return codigo;
+    }
+
+    public String getCodigoNumerico() {
+        return codigoNumerico;
     }
 
     public String getNome() {

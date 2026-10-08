@@ -4,101 +4,124 @@ import ao.gov.minfin.rupe.application.command.ProcessarPagamentoCommand;
 import ao.gov.minfin.rupe.application.port.in.ProcessarPagamentoUseCase;
 import ao.gov.minfin.rupe.application.port.out.PaymentTransactionRepositoryPort;
 import ao.gov.minfin.rupe.application.port.out.RupeRepositoryPort;
+import ao.gov.minfin.rupe.application.port.out.WebhookOutboxPort;
+import ao.gov.minfin.rupe.application.port.out.WebhookSubscriptionPort;
+import ao.gov.minfin.rupe.application.webhook.WebhookPayload;
 import ao.gov.minfin.rupe.domain.entity.Rupe;
 import ao.gov.minfin.rupe.domain.exception.RupeNaoEncontradoException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class ProcessarPagamentoService
         implements ProcessarPagamentoUseCase {
 
     private final RupeRepositoryPort rupeRepository;
-    private final PaymentTransactionRepositoryPort
-            paymentTransactionRepository;
+    private final PaymentTransactionRepositoryPort paymentTransactionRepository;
+    private final WebhookSubscriptionPort webhookSubscriptionPort;
+    private final WebhookOutboxPort webhookOutboxPort;
+    private final ObjectMapper objectMapper;
 
     public ProcessarPagamentoService(
             RupeRepositoryPort rupeRepository,
-            PaymentTransactionRepositoryPort paymentTransactionRepository
+            PaymentTransactionRepositoryPort paymentTransactionRepository,
+            WebhookSubscriptionPort webhookSubscriptionPort,
+            WebhookOutboxPort webhookOutboxPort,
+            ObjectMapper objectMapper
     ) {
         this.rupeRepository = rupeRepository;
-        this.paymentTransactionRepository =
-                paymentTransactionRepository;
+        this.paymentTransactionRepository = paymentTransactionRepository;
+        this.webhookSubscriptionPort = webhookSubscriptionPort;
+        this.webhookOutboxPort = webhookOutboxPort;
+        this.objectMapper = objectMapper;
     }
 
-@Override
-public Rupe executar(
-        ProcessarPagamentoCommand command
-) {
+    @Override
+    public Rupe executar(ProcessarPagamentoCommand command) {
 
-    String idempotencyKey =
-            command.idempotencyKey().trim();
+        String idempotencyKey = command.idempotencyKey().trim();
+        String referencia = command.referencia().trim();
 
-    String referencia =
-            command.referencia().trim();
+        if (paymentTransactionRepository
+                .existePorIdempotencyKey(idempotencyKey)) {
 
-    /*
-     * Fast path:
-     *
-     * Se o evento já foi processado, não precisamos
-     * adquirir o lock do RUPE.
-     */
-    if (paymentTransactionRepository
-            .existePorIdempotencyKey(idempotencyKey)) {
+            return rupeRepository
+                    .buscarPorReferencia(referencia)
+                    .orElseThrow(() ->
+                            new RupeNaoEncontradoException(referencia)
+                    );
+        }
 
-        return rupeRepository
-                .buscarPorReferencia(referencia)
+        Rupe rupe = rupeRepository
+                .buscarPorReferenciaComBloqueio(referencia)
                 .orElseThrow(() ->
-                        new RupeNaoEncontradoException(
-                                referencia
-                        )
+                        new RupeNaoEncontradoException(referencia)
                 );
+
+        if (paymentTransactionRepository
+                .existePorIdempotencyKey(idempotencyKey)) {
+
+            return rupeRepository
+                    .buscarPorReferencia(referencia)
+                    .orElseThrow(() ->
+                            new RupeNaoEncontradoException(referencia)
+                    );
+        }
+
+        rupe.confirmarPagamento(
+                command.numeroRecibo(),
+                command.dataPagamento()
+        );
+
+        Rupe rupeActualizado = rupeRepository.guardar(rupe);
+
+        paymentTransactionRepository.registar(
+                idempotencyKey,
+                referencia,
+                command.numeroRecibo(),
+                command.dataPagamento(),
+                LocalDateTime.now()
+        );
+
+        enfileirarWebhook(rupeActualizado);
+
+        return rupeActualizado;
     }
 
-    /*
-     * Lock pessimista sobre o RUPE.
-     */
-    Rupe rupe = rupeRepository
-            .buscarPorReferenciaComBloqueio(referencia)
-            .orElseThrow(() ->
-                    new RupeNaoEncontradoException(
-                            referencia
-                    )
-            );
+    private void enfileirarWebhook(Rupe rupe) {
 
-    /*
-     * Segunda verificação de idempotência.
-     *
-     * Necessária para concorrência.
-     */
-    if (paymentTransactionRepository
-            .existePorIdempotencyKey(idempotencyKey)) {
+    String nif = rupe.getContribuinte().getNif().getValor();
 
-        return rupeRepository
-                .buscarPorReferencia(referencia)
-                .orElseThrow(() ->
-                        new RupeNaoEncontradoException(
-                                referencia
-                        )
+    webhookSubscriptionPort.buscarPorNif(nif)
+            .ifPresent(subscricao -> {
+
+                UUID eventId = UUID.randomUUID();
+
+                WebhookPayload payload =
+                        WebhookPayload.from(rupe, eventId);
+
+                String payloadJson = serializar(payload);
+
+                webhookOutboxPort.enfileirar(
+                        eventId,
+                        rupe.getReferencia(),
+                        subscricao.url(),
+                        subscricao.secret(),
+                        payloadJson
                 );
-    }
-
-    rupe.confirmarPagamento(
-            command.numeroRecibo(),
-            command.dataPagamento()
-    );
-
-    Rupe rupeActualizado =
-            rupeRepository.guardar(rupe);
-
-    paymentTransactionRepository.registar(
-            idempotencyKey,
-            referencia,
-            command.numeroRecibo(),
-            command.dataPagamento(),
-            LocalDateTime.now()
-    );
-
-    return rupeActualizado;
+            });
 }
 
+    private String serializar(WebhookPayload payload) {
+        try {
+            return objectMapper.writeValueAsString(payload);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException(
+                    "Não foi possível serializar o payload do webhook.",
+                    exception
+            );
+        }
+    }
 }

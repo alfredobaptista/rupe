@@ -9,6 +9,7 @@ import ao.gov.minfin.rupe.domain.entity.Rupe;
 import ao.gov.minfin.rupe.domain.entity.Servico;
 import ao.gov.minfin.rupe.domain.exception.ServicoNaoEncontradoException;
 import ao.gov.minfin.rupe.domain.rules.RupeReferenceGenerator;
+import org.springframework.transaction.annotation.Transactional;
 
 public class GerarRupeService implements GerarRupeUseCase {
 
@@ -24,6 +25,7 @@ public class GerarRupeService implements GerarRupeUseCase {
     }
 
     @Override
+    @Transactional
     public Rupe executar(GerarRupeCommand command) {
 
         Servico servico = servicoRepository
@@ -49,8 +51,7 @@ public class GerarRupeService implements GerarRupeUseCase {
                 rupeRepository.obterProximoSequencial();
 
         String referencia = RupeReferenceGenerator.gerar(
-                servico.getCodigoOrganismo(),
-                servico.getCodigoModulo(),
+                servico.getCodigoNumerico(),
                 sequencial
         );
 
